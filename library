@@ -1,0 +1,41 @@
+package library;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Library {
+    private String name;
+    private List<Book> books;
+
+    public Library(String name) {
+        this.name = name;
+        this.books = new ArrayList<>();
+    }
+
+    public void addBook(Book book) {
+        books.add(book);
+        updateCatalog();
+    }
+
+    void updateCatalog() { // package-private метод
+        System.out.println("Каталог бібліотеки оновлено.");
+    }
+
+    public Book findBook(String title) {
+        for (Book book : books) {
+            if (book.getTitle().equalsIgnoreCase(title)) {
+                return book;
+            }
+        }
+        return null;
+    }
+
+    public void listAvailableBooks() {
+        System.out.println("Доступні книги:");
+        for (Book book : books) {
+            if (book.isAvailable()) {
+                System.out.println("- " + book.getTitle());
+            }
+        }
+    }
+}
