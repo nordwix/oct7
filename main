@@ -1,0 +1,28 @@
+import library.Book;
+import library.Library;
+import library.Member;
+
+public class Main {
+    public static void main(String[] args) {
+        Library library = new Library("Центральна бібліотека");
+
+        Book book1 = new Book("Java Basics", "John Doe");
+        Book book2 = new Book("Advanced Java", "Jane Smith");
+
+        library.addBook(book1);
+        library.addBook(book2);
+
+        Member member = new Member("Олексій");
+
+        library.listAvailableBooks();
+
+        member.borrowBook(book1);
+        member.borrowBook(book2); // спроба взяти другу книгу
+        member.borrowBook(book1); // спроба взяти вже взяту книгу
+
+        library.listAvailableBooks();
+
+        member.returnBook(book1);
+        library.listAvailableBooks();
+    }
+}
