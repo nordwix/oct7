@@ -1,28 +1,253 @@
-import library.Book;
-import library.Library;
-import library.Member;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
-public class Main {
+public class LibraryApp {
+    
+    
+    static class User {
+        private int userId;
+        private String firstName;
+        private String lastName;
+        private String login;
+        private String hashedPassword;
+        protected String role;
+
+        User(int userId, String firstName, String lastName, String login, String password, String role) {
+            this.userId = userId;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.login = login;
+            this.hashedPassword = String.valueOf(Objects.hash(password));
+            this.role = role;
+        }
+
+        public boolean login(String login, String password) {
+            return this.login.equals(login) && String.valueOf(Objects.hash(password)).equals(this.hashedPassword);
+        }
+
+        public int getUserId() {return userId;}
+        public String getFullName() {return firstName + " " + lastName;}
+        public String getRole() {return role;}
+
+        boolean checkAccessRole(String requiredRole) {
+            return this.role.equals(requiredRole);
+        }
+
+        @Override
+        public String toString() {
+            return "User [ID=" + userId + ", Name=" + firstName + " " + lastName + ", Role=" + role + "]";
+        }
+    }
+
+    static class Admin extends User {
+        private List<String> actionsLog;
+
+        Admin(int adminId, String firstName, String lastName, String login, String password) {
+            super(adminId, firstName, lastName, login, password, "адміністратор");
+            this.actionsLog = new ArrayList<>();
+        }
+
+        public boolean depositBook(Book book, LibraryCatalog catalog) {
+            if (!catalog.isBookInCatalog(book.getBookId())) {
+                catalog.internalAddBook(book); 
+                this.actionsLog.add("Додано книгу ID: " + book.getBookId());
+                return true;
+            }
+            return false;
+        }
+
+        public void blockUser(User user) {
+            this.actionsLog.add("Заблоковано користувача ID: " + user.getUserId());
+        }
+
+        @Override
+        public String toString() {
+            return "Admin [ID=" + getUserId() + ", Name=" + getFullName() + ", Actions=" + actionsLog.size() + "]";
+        }
+    }
+    
+    static class Book {
+        private int bookId;
+        private String title;
+        private String author;
+        private int year;
+        private String type;
+        private String fileLink;
+        private boolean isAvailable;
+
+        Book(int bookId, String title, String author, int year, String type, String fileLink) {
+            this.bookId = bookId;
+            this.title = title;
+            this.author = author;
+            this.year = year;
+            this.type = type;
+            this.fileLink = fileLink;
+            this.isAvailable = true;
+        }
+
+        public int getBookId() {return bookId;}
+        public String getTitle() {return title;}
+        public String getAuthor() {return author;}
+        public boolean isAvailable() {return isAvailable;}
+
+        public void setFileLink(String fileLink) {
+            this.fileLink = fileLink;
+        }
+
+        void setAvailability(boolean status) {
+            this.isAvailable = status;
+        }
+
+        @Override
+        public String toString() {
+            return "Book [ID=" + bookId + ", Title='" + title + "', Available=" + isAvailable + "]";
+        }
+    }
+
+    static class LibraryCatalog {
+        private List<Book> books;
+        private String catalogName;
+
+        LibraryCatalog(String catalogName) {
+            this.catalogName = catalogName;
+            this.books = new ArrayList<>();
+        }
+
+        public List<Book> searchBooks(String query) {
+            List<Book> results = new ArrayList<>();
+            String lowerQuery = query.toLowerCase();
+            for (Book book : books) {
+                if (book.getTitle().toLowerCase().contains(lowerQuery) || 
+                    book.getAuthor().toLowerCase().contains(lowerQuery)) {
+                    results.add(book);
+                }
+            }
+            return results;
+        }
+
+        public int getTotalBookCount() {
+            return books.size();
+        }
+
+        public boolean isBookInCatalog(int bookId) {
+            return books.stream().anyMatch(b -> b.getBookId() == bookId);
+        }
+
+        void internalAddBook(Book book) {
+            this.books.add(book);
+        }
+        
+        @Override
+        public String toString() {
+            return "LibraryCatalog [Name=" + catalogName + ", Total Books=" + books.size() + "]";
+        }
+    }
+
+    static class DownloadOrder {
+        private int downloadId;
+        private int userId;
+        private int bookId;
+        private LocalDateTime downloadDateTime;
+
+        DownloadOrder(int downloadId) {
+            this.downloadId = downloadId;
+        }
+
+        public boolean processDownload(User user, Book book) {
+            if (!book.isAvailable()) {
+                System.out.println(" Помилка: Книга недоступна для завантаження.");
+                return false;
+            }
+            
+            this.userId = user.getUserId();
+            this.bookId = book.getBookId();
+            this.downloadDateTime = LocalDateTime.now();
+            book.setAvailability(false); 
+            
+            System.out.println(" Завантаження книги ID " + book.getBookId() + " успішне!");
+            return true;
+        }
+
+        private boolean checkInternalLimit(User user) {
+            return true; 
+        }
+
+        @Override
+        public String toString() {
+            return "DownloadOrder [ID=" + downloadId + ", User ID=" + userId + ", Book ID=" + bookId + ", Time=" + downloadDateTime + "]";
+        }
+    }
+    
+    static class Category {
+        private int categoryId;
+        private String name;
+        private List<Integer> bookIds;
+
+        Category(int categoryId, String name) {
+            this.categoryId = categoryId;
+            this.name = name;
+            this.bookIds = new ArrayList<>();
+        }
+
+        public void assignBook(int bookId) {
+            if (!bookIds.contains(bookId)) {
+                bookIds.add(bookId);
+            }
+        }
+
+        public int getCategoryId() {return categoryId;}
+        public int getBookCount() {return bookIds.size();}
+
+        @Override
+        public String toString() {
+            return "Category [ID=" + categoryId + ", Name='" + name + "', Books=" + bookIds.size() + "]";
+        }
+    }
+
     public static void main(String[] args) {
-        Library library = new Library("Центральна бібліотека");
+        System.out.println("--- Практична робота 3: Демонстрація Інкапсуляції ---");
 
-        Book book1 = new Book("Java Basics", "John Doe");
-        Book book2 = new Book("Advanced Java", "Jane Smith");
+        User standardUser = new User(101, "Олена", "Іваненко", "olena_i", "pass123", "звичайний користувач");
+        Admin libraryAdmin = new Admin(1, "Петро", "Сидоренко", "admin_p", "root");
+        
+        Book book1 = new Book(201, "Java. Ефективне програмування", "Джошуа Блох", 2019, "Електронна книга", "/files/java.pdf");
+        Book book2 = new Book(202, "Гаррі Поттер", "Дж. К. Роулінг", 1997, "Аудіокнига", "/files/hp.mp3");
+        
+        LibraryCatalog mainCatalog = new LibraryCatalog("Центральний Каталог");
+        Category scienceCategory = new Category(3, "Наукова література");
+        DownloadOrder order1 = new DownloadOrder(5001);
 
-        library.addBook(book1);
-        library.addBook(book2);
+        System.out.println("\n>>> 1. Public та Protected (через Getter):");
+        
+        boolean auth = standardUser.login("olena_i", "pass123");
+        System.out.println("Авторизація Олени: " + (auth ? "Успішна" : "Помилка"));
+        
+        System.out.println("Роль Адміністратора: " + libraryAdmin.getRole());
+        System.out.println("Книга 1 доступна: " + book1.isAvailable());
+        System.out.println(mainCatalog.toString());
+        
+        System.out.println("----------------------------------------");
+        
+        System.out.println(">>> 2. Демонстрація Package-private (Admin -> Catalog):");
+        
+        System.out.println("Кількість книг ДО додавання: " + mainCatalog.getTotalBookCount());
+        libraryAdmin.depositBook(book1, mainCatalog);
+        libraryAdmin.depositBook(book2, mainCatalog);
+        System.out.println("Кількість книг ПІСЛЯ додавання: " + mainCatalog.getTotalBookCount());
 
-        Member member = new Member("Олексій");
+        System.out.println("----------------------------------------");
+        
+        System.out.println(">>> 3. Демонстрація Package-private (DownloadOrder -> Book):");
+        
+        System.out.println("Доступність Book1 ДО завантаження: " + book1.isAvailable());
+        
+        order1.processDownload(standardUser, book1);
+        
+        System.out.println("Доступність Book1 ПІСЛЯ завантаження: " + book1.isAvailable());
+        System.out.println(order1.toString());
 
-        library.listAvailableBooks();
-
-        member.borrowBook(book1);
-        member.borrowBook(book2); // спроба взяти другу книгу
-        member.borrowBook(book1); // спроба взяти вже взяту книгу
-
-        library.listAvailableBooks();
-
-        member.returnBook(book1);
-        library.listAvailableBooks();
+        System.out.println("\n--- Завершення демонстрації ---");
     }
 }
